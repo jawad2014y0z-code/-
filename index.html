@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <script>
+      // Gracefully mock Vite HMR WebSocket and suppress disconnection errors in sandbox iframe
+      (function () {
+        var RealWebSocket = window.WebSocket;
+        if (RealWebSocket) {
+          function FakeHmrWebSocket(url, protocols) {
+            var target = new EventTarget();
+            var self = this;
+            this.url = url;
+            this.protocols = protocols;
+            this.protocol = 'vite-hmr';
+            this.readyState = 1; // WebSocket.OPEN
+            this.OPEN = 1;
+            this.CONNECTING = 0;
+            this.CLOSING = 2;
+            this.CLOSED = 3;
+            this.bufferedAmount = 0;
+            this.binaryType = 'blob';
+            this.extensions = '';
+            this.onopen = null;
+            this.onclose = null;
+            this.onerror = null;
+            this.onmessage = null;
+
+            this.addEventListener = function (type, listener, options) {
+              target.addEventListener(type, listener, options);
+            };
+            this.removeEventListener = function (type, listener, options) {
+              target.removeEventListener(type, listener, options);
+            };
+            this.dispatchEvent = function (event) {
+              return target.dispatchEvent(event);
+            };
+
+            this.send = function () {};
+            this.close = function (code, reason) {
+              self.readyState = 3;
+              var ev = new CloseEvent('close', { code: code || 1000, reason: reason || 'Normal Closure', wasClean: true });
+              if (typeof self.onclose === 'function') {
+                try { self.onclose(ev); } catch (err) {}
+              }
+              target.dispatchEvent(ev);
+            };
+
+            setTimeout(function () {
+              if (self.readyState === 1) {
+                var ev = new Event('open');
+                if (typeof self.onopen === 'function') {
+                  try { self.onopen(ev); } catch (err) {}
+                }
+                target.dispatchEvent(ev);
+              }
+            }, 0);
+          }
+
+          FakeHmrWebSocket.CONNECTING = 0;
+          FakeHmrWebSocket.OPEN = 1;
+          FakeHmrWebSocket.CLOSING = 2;
+          FakeHmrWebSocket.CLOSED = 3;
+
+          function WrappedWebSocket(url, protocols) {
+            var isHmr = false;
+            if (protocols === 'vite-hmr') isHmr = true;
+            if (Array.isArray(protocols) && protocols.indexOf('vite-hmr') !== -1) isHmr = true;
+            var urlStr = String(url || '');
+            if (urlStr.indexOf(':24678') !== -1 || (urlStr.indexOf('token=') !== -1 && urlStr.indexOf('/api/game-ws') === -1)) {
+              isHmr = true;
+            }
+
+            if (isHmr) {
+              return new FakeHmrWebSocket(url, protocols);
+            }
+            return new RealWebSocket(url, protocols);
+          }
+
+          WrappedWebSocket.CONNECTING = RealWebSocket.CONNECTING;
+          WrappedWebSocket.OPEN = RealWebSocket.OPEN;
+          WrappedWebSocket.CLOSING = RealWebSocket.CLOSING;
+          WrappedWebSocket.CLOSED = RealWebSocket.CLOSED;
+          WrappedWebSocket.prototype = RealWebSocket.prototype;
+
+          window.WebSocket = WrappedWebSocket;
+        }
+
+        function isViteHmrError(str) {
+          if (!str) return false;
+          var s = String(str);
+          return (
+            s.indexOf('WebSocket closed without opened') !== -1 ||
+            s.indexOf('vite:ws') !== -1 ||
+            (s.indexOf('[vite]') !== -1 && (s.indexOf('WebSocket') !== -1 || s.indexOf('connection lost') !== -1 || s.indexOf('failed to connect') !== -1))
+          );
+        }
+
+        var origConsoleError = console.error;
+        console.error = function () {
+          var combined = Array.prototype.slice.call(arguments).map(function (a) {
+            if (!a) return '';
+            if (typeof a === 'string') return a;
+            return a.message || a.stack || String(a);
+          }).join(' ');
+
+          if (isViteHmrError(combined)) {
+            return;
+          }
+          origConsoleError.apply(console, arguments);
+        };
+
+        var origConsoleWarn = console.warn;
+        console.warn = function () {
+          var combined = Array.prototype.slice.call(arguments).map(function (a) {
+            if (!a) return '';
+            if (typeof a === 'string') return a;
+            return a.message || a.stack || String(a);
+          }).join(' ');
+
+          if (isViteHmrError(combined)) {
+            return;
+          }
+          origConsoleWarn.apply(console, arguments);
+        };
+
+        window.addEventListener('error', function (e) {
+          var msg = (e && (e.message || (e.error && (e.error.message || e.error.stack)))) || '';
+          if (isViteHmrError(msg)) {
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            if (e.preventDefault) e.preventDefault();
+            return true;
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function (e) {
+          var reason = (e && (e.reason && (e.reason.message || e.reason.stack || String(e.reason)))) || '';
+          if (isViteHmrError(reason)) {
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            if (e.preventDefault) e.preventDefault();
+          }
+        }, true);
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>جمعة | منصة ألعاب الجلسات المنزلية</title>
+    <meta name="description" content="منصة ألعاب عربية تفاعلية مصممة لجلسات الأصدقاء في المنزل تجمع بين لودو، جاكارو، كيرم، المافيا، وبرا السالفة بتجربة لعب حقيقية وأصوات ممتعة ودعم من 4 إلى 8 لاعبين." />
+    <meta property="og:title" content="جمعة | منصة ألعاب الجلسات المنزلية" />
+    <meta property="og:description" content="منصة ألعاب عربية تفاعلية مصممة لجلسات الأصدقاء في المنزل تجمع بين لودو، جاكارو، كيرم، المافيا، وبرا السالفة بتجربة لعب حقيقية وأصوات ممتعة ودعم من 4 إلى 8 لاعبين." />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#0c0a09" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="جمعة" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-stone-950 text-stone-100 antialiased font-sans select-none overflow-x-hidden min-h-screen">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
